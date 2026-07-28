@@ -1,6 +1,7 @@
 /**
  * Multi-Source Native Android Job Fetcher Service with In-Memory Caching.
  * Integrates JSearch (search-v2 API), RemoteOK, Remotive, Himalayas, WeWorkRemotely RSS.
+ * Environment Variable Support: JSEARCH_API_KEY, RESEND_API_KEY.
  */
 
 let cachedJSearchJobs = [];
@@ -8,45 +9,57 @@ let lastJSearchFetchTime = 0;
 const CACHE_TTL_MS = 15 * 60 * 1000; // 15 minutes cache
 
 async function fetchJSearchJobs(query = 'Android Developer', apiKey = '') {
-  if (!apiKey) return [];
+  const activeKey = apiKey || process.env.JSEARCH_API_KEY || '';
+  if (!activeKey) return [];
+
+  const now = Date.now();
+  if (cachedJSearchJobs.length > 0 && (now - lastJSearchFetchTime) < CACHE_TTL_MS) {
+    return cachedJSearchJobs;
+  }
+
   try {
     const url = `https://jsearch.p.rapidapi.com/search-v2?query=${encodeURIComponent(query)}&num_pages=1&date_posted=all`;
     const res = await fetch(url, {
       headers: {
-        'x-rapidapi-key': apiKey,
+        'x-rapidapi-key': activeKey,
         'x-rapidapi-host': 'jsearch.p.rapidapi.com',
         'Content-Type': 'application/json'
       }
     });
 
-    if (!res.ok) return [];
+    if (!res.ok) return cachedJSearchJobs;
     const data = await res.json();
     
     const rawJobs = (data.data && data.data.jobs) ? data.data.jobs : (Array.isArray(data.data) ? data.data : []);
 
-    return rawJobs.map(item => ({
-      id: `jsearch_${item.job_id}`,
-      source: 'JSearch (LinkedIn/Indeed/Glassdoor)',
-      title: item.job_title || 'Android Developer',
-      company: item.employer_name || 'Tech Enterprise',
-      location: item.job_is_remote ? 'Remote (Worldwide)' : `${item.job_city || ''} ${item.job_country || ''}`.trim() || 'India / Hybrid',
-      jobType: item.job_employment_type || 'Full-time / Contract',
-      tags: ['android', 'kotlin', item.job_employment_type || 'mobile'],
-      description: item.job_description || '',
-      applyUrl: item.job_apply_link || item.job_google_link || item.employer_website || `https://www.google.com/search?q=${encodeURIComponent(item.job_title + ' ' + item.employer_name)}`,
-      postedAt: item.job_posted_at_datetime_utc || new Date().toISOString(),
-      salary: item.job_min_salary ? `$${item.job_min_salary} - $${item.job_max_salary}` : 'Competitive'
-    }));
+    if (rawJobs.length > 0) {
+      cachedJSearchJobs = rawJobs.map(item => ({
+        id: `jsearch_${item.job_id}`,
+        source: 'JSearch (LinkedIn/Indeed/Glassdoor)',
+        title: item.job_title || 'Android Developer',
+        company: item.employer_name || 'Tech Enterprise',
+        location: item.job_is_remote ? 'Remote (Worldwide)' : `${item.job_city || ''} ${item.job_country || ''}`.trim() || 'India / Hybrid',
+        jobType: item.job_employment_type || 'Full-time / Contract',
+        tags: ['android', 'kotlin', item.job_employment_type || 'mobile'],
+        description: item.job_description || '',
+        applyUrl: item.job_apply_link || item.job_google_link || item.employer_website || `https://www.google.com/search?q=${encodeURIComponent(item.job_title + ' ' + item.employer_name)}`,
+        postedAt: item.job_posted_at_datetime_utc || new Date().toISOString(),
+        salary: item.job_min_salary ? `$${item.job_min_salary} - $${item.job_max_salary}` : 'Competitive'
+      }));
+      lastJSearchFetchTime = now;
+    }
+
+    return cachedJSearchJobs;
   } catch (err) {
     console.error('JSearch Fetch Error:', err.message);
-    return [];
+    return cachedJSearchJobs;
   }
 }
 
 async function fetchRemoteOKJobs() {
   try {
     const res = await fetch('https://remoteok.com/api', {
-      headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) JobAlertBot/10.0' }
+      headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) JobAlertBot/11.0' }
     });
     if (!res.ok) return [];
     const data = await res.json();
@@ -174,6 +187,8 @@ async function fetchWeWorkRemotelyJobs() {
 }
 
 async function fetchAllLiveJobs(userSkills = [], apiKey = '') {
+  const activeJSearchKey = apiKey || process.env.JSEARCH_API_KEY || '';
+
   const now = Date.now();
   if (cachedJSearchJobs.length > 0 && (now - lastJSearchFetchTime) < CACHE_TTL_MS) {
     return cachedJSearchJobs;
@@ -182,9 +197,9 @@ async function fetchAllLiveJobs(userSkills = [], apiKey = '') {
   console.log('Fetching multi-query JSearch & live sources...');
   
   const [jsearch1, jsearch2, jsearch3, remoteOk, remotiveAndroid, himalayasAndroid, wwrJobs] = await Promise.all([
-    fetchJSearchJobs('Android Developer', apiKey),
-    fetchJSearchJobs('Kotlin Android Developer', apiKey),
-    fetchJSearchJobs('Android Engineer India', apiKey),
+    fetchJSearchJobs('Android Developer', activeJSearchKey),
+    fetchJSearchJobs('Kotlin Android Developer', activeJSearchKey),
+    fetchJSearchJobs('Android Engineer India', activeJSearchKey),
     fetchRemoteOKJobs(),
     fetchRemotiveJobs('android'),
     fetchHimalayasJobs('android'),

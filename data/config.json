@@ -41,7 +41,7 @@
   },
   "emailConfig": {
     "service": "resend",
-    "resendApiKey": "re_YiaZoi4J_7ad3Z9mW2t5VstK5Am4Kpo3m",
+    "resendApiKey": "",
     "host": "smtp.gmail.com",
     "port": 465,
     "secure": true,
@@ -53,6 +53,6 @@
     "cronIntervalMinutes": 60,
     "minMatchPercentage": 35,
     "activeScheduler": true,
-    "jsearchApiKey": "96df2b2643msh312ab85dbcf7629p113fadjsn26ffbb0dd09d"
+    "jsearchApiKey": ""
   }
 }
