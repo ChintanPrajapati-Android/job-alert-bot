@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>JobAlert.AI - Native Android Job Automation</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="minimal-app">
+    <!-- Navbar Header -->
+    <header class="navbar">
+      <div class="nav-brand">
+        <span class="logo-icon">⚡</span>
+        <span class="logo-title">JobAlert<strong>.AI</strong></span>
+      </div>
+      <div class="system-status">
+        <span class="status-dot"></span> System Operational
+      </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="container">
+      
+      <!-- Top Control Bar (Automation Toggle & Match Count) -->
+      <div class="card control-card">
+        <div class="control-group">
+          <div class="toggle-wrapper">
+            <label class="switch">
+              <input type="checkbox" id="automation-toggle" checked>
+              <span class="slider"></span>
+            </label>
+            <div class="toggle-label">
+              <h3>Hourly Email Automation</h3>
+              <p id="cron-interval-text">Active (Checking every 60 mins)</p>
+            </div>
+          </div>
+
+          <div class="match-badge-box">
+            <span class="match-count" id="match-count">18</span>
+            <span class="match-label">Matches Found</span>
+          </div>
+        </div>
+
+        <button id="btn-trigger" class="btn btn-primary">
+          📩 Send Email Now
+        </button>
+      </div>
+
+      <!-- Config & Profile Card -->
+      <div class="card config-card">
+        <div class="card-header">
+          <h2>⚙️ Configuration Information</h2>
+          <button id="btn-save" class="btn btn-secondary btn-sm">💾 Save Changes</button>
+        </div>
+
+        <div class="config-grid">
+          <div class="config-item">
+            <label>Candidate Name:</label>
+            <input type="text" id="cfg-name" value="Chintan Prajapati">
+          </div>
+
+          <div class="config-item">
+            <label>Recipient Email:</label>
+            <input type="email" id="cfg-email" value="ctnprt@gmail.com">
+          </div>
+
+          <div class="config-item">
+            <label>Target Job Role:</label>
+            <input type="text" id="cfg-role" value="Native Android Developer (Kotlin / Java)" readonly>
+          </div>
+
+          <div class="config-item">
+            <label>Resend API Key:</label>
+            <input type="password" id="cfg-resend-key" value="re_YiaZoi4J_7ad3Z9mW2t5VstK5Am4Kpo3m">
+          </div>
+        </div>
+
+        <div class="skills-section">
+          <label>Active Core Skills:</label>
+          <div class="skills-chips" id="skills-container">
+            <span class="chip">Kotlin</span>
+            <span class="chip">Java</span>
+            <span class="chip">Android SDK</span>
+            <span class="chip">Jetpack Compose</span>
+            <span class="chip">MVVM</span>
+            <span class="chip">Coroutines & Flow</span>
+            <span class="chip">Room Database</span>
+            <span class="chip">BLE</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Matched Native Android Jobs List -->
+      <div class="card jobs-card">
+        <div class="card-header">
+          <h2>📱 Matched Native Android Jobs</h2>
+          <span class="sub-text">Worldwide Remote & India</span>
+        </div>
+
+        <div id="jobs-list" class="jobs-list">
+          <div class="loading-text">Loading matched jobs...</div>
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+  <!-- Toast Notification -->
+  <div id="toast" class="toast"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>

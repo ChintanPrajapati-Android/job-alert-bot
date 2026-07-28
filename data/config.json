@@ -1,0 +1,58 @@
+{
+  "userProfile": {
+    "name": "Chintan Prajapati",
+    "email": "ctnprt@gmail.com",
+    "experienceRange": {
+      "min": 4,
+      "max": 10
+    },
+    "jobTypes": ["Remote", "Contract", "Full-time"],
+    "skills": [
+      "Android",
+      "Kotlin",
+      "Java",
+      "Jetpack Compose",
+      "MVVM",
+      "Clean Architecture",
+      "Hilt",
+      "Koin",
+      "Coroutines",
+      "Flow",
+      "Room Database",
+      "SQLite",
+      "BLE",
+      "WebRTC",
+      "TensorFlow Lite",
+      "WorkManager",
+      "CameraX",
+      "Git",
+      "GitHub Actions",
+      "Gradle",
+      "Firebase"
+    ],
+    "targetTitles": [
+      "Senior Android Developer",
+      "Android Developer",
+      "Lead Android Engineer",
+      "Kotlin Developer"
+    ],
+    "minSalary": 0,
+    "resumeText": "Chintan Prajapati - Senior Android Developer (9+ years experience). Email: ctnprt@gmail.com. Expert in Kotlin, Java, Jetpack Compose, Clean Architecture, MVVM, SOLID, Dependency Injection (Hilt, Koin), Coroutines & Flow, WorkManager, CameraX, Room Database, SQLite, BLE (GATT), WebRTC, TensorFlow Lite, Git, GitHub Actions, Gradle, Firebase Crashlytics. Senior Android Developer (SDE-2) at Lenskart, Mexus Education, Uffizio India."
+  },
+  "emailConfig": {
+    "service": "resend",
+    "resendApiKey": "re_YiaZoi4J_7ad3Z9mW2t5VstK5Am4Kpo3m",
+    "host": "smtp.gmail.com",
+    "port": 465,
+    "secure": true,
+    "user": "",
+    "pass": "",
+    "recipient": "ctnprt@gmail.com"
+  },
+  "settings": {
+    "cronIntervalMinutes": 60,
+    "minMatchPercentage": 35,
+    "activeScheduler": true,
+    "jsearchApiKey": "96df2b2643msh312ab85dbcf7629p113fadjsn26ffbb0dd09d"
+  }
+}
