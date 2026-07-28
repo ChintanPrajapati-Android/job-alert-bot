@@ -118,7 +118,7 @@ async function fetchHimalayasJobs(query = 'android') {
       tags: item.categories || [],
       description: item.excerpt || item.description || '',
       applyUrl: item.applicationLink || item.url,
-      postedAt: item.pubDate ? new Date(pubDate).toISOString() : new Date().toISOString(),
+      postedAt: item.pubDate ? new Date(item.pubDate).toISOString() : new Date().toISOString(),
       salary: item.parentSalaryRange || 'Market Standard'
     }));
   } catch (err) {
