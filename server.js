@@ -151,7 +151,15 @@ const server = http.createServer(async (req, res) => {
 
       // 5. POST /api/trigger (Instant Email Trigger)
       if (pathname === '/api/trigger' && req.method === 'POST') {
-        console.log('Manual notification trigger received from UI.');
+        const triggerToken = process.env.TRIGGER_TOKEN;
+        if (triggerToken) {
+          const requestToken = parsedUrl.query.token || req.headers['x-trigger-token'];
+          if (requestToken !== triggerToken) {
+            console.warn('Unauthorized trigger attempt.');
+            return sendJson(res, 401, { success: false, error: 'Unauthorized' });
+          }
+        }
+        console.log('Manual/Scheduled notification trigger received.');
         const result = await scheduler.executeJobCycle();
         return sendJson(res, 200, { success: true, result });
       }
