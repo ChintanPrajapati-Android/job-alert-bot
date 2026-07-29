@@ -38,17 +38,33 @@ const defaultConfig = {
 };
 
 function getConfig() {
-  if (!fs.existsSync(CONFIG_FILE)) {
+  let config = defaultConfig;
+  if (fs.existsSync(CONFIG_FILE)) {
+    try {
+      const raw = fs.readFileSync(CONFIG_FILE, 'utf8');
+      config = { ...defaultConfig, ...JSON.parse(raw) };
+    } catch (err) {
+      console.error('Error reading config, using default:', err);
+    }
+  } else {
     saveConfig(defaultConfig);
-    return defaultConfig;
   }
-  try {
-    const raw = fs.readFileSync(CONFIG_FILE, 'utf8');
-    return { ...defaultConfig, ...JSON.parse(raw) };
-  } catch (err) {
-    console.error('Error reading config, using default:', err);
-    return defaultConfig;
+
+  // Override config with environment variables if available (e.g. in GitHub Actions)
+  if (process.env.RECIPIENT_EMAIL) {
+    if (!config.emailConfig) config.emailConfig = {};
+    config.emailConfig.recipient = process.env.RECIPIENT_EMAIL;
   }
+  if (process.env.RESEND_API_KEY) {
+    if (!config.emailConfig) config.emailConfig = {};
+    config.emailConfig.resendApiKey = process.env.RESEND_API_KEY;
+  }
+  if (process.env.JSEARCH_API_KEY) {
+    if (!config.settings) config.settings = {};
+    config.settings.jsearchApiKey = process.env.JSEARCH_API_KEY;
+  }
+
+  return config;
 }
 
 function saveConfig(config) {

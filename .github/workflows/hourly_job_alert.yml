@@ -20,9 +20,18 @@ jobs:
         with:
           node-version: '24'
 
+      - name: Restore Data Cache
+        uses: actions/cache@v4
+        with:
+          path: data
+          key: job-alert-data-${{ github.run_id }}
+          restore-keys: |
+            job-alert-data-
+
       - name: Run Job Alert Automation Cron
         env:
           RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
           JSEARCH_API_KEY: ${{ secrets.JSEARCH_API_KEY }}
+          RECIPIENT_EMAIL: ${{ secrets.RECIPIENT_EMAIL }}
         run: |
           node scripts/cronTrigger.js

@@ -4,17 +4,20 @@
  * Environment Variable Support: JSEARCH_API_KEY, RESEND_API_KEY.
  */
 
-let cachedJSearchJobs = [];
-let lastJSearchFetchTime = 0;
+let cachedJSearchJobs = {}; // keyed by query
+let lastJSearchFetchTime = {}; // keyed by query
 const CACHE_TTL_MS = 15 * 60 * 1000; // 15 minutes cache
+
+let cachedCombinedJobs = [];
+let lastCombinedFetchTime = 0;
 
 async function fetchJSearchJobs(query = 'Android Developer', apiKey = '') {
   const activeKey = apiKey || process.env.JSEARCH_API_KEY || '';
   if (!activeKey) return [];
 
   const now = Date.now();
-  if (cachedJSearchJobs.length > 0 && (now - lastJSearchFetchTime) < CACHE_TTL_MS) {
-    return cachedJSearchJobs;
+  if (cachedJSearchJobs[query] && (now - lastJSearchFetchTime[query]) < CACHE_TTL_MS) {
+    return cachedJSearchJobs[query];
   }
 
   try {
@@ -27,13 +30,13 @@ async function fetchJSearchJobs(query = 'Android Developer', apiKey = '') {
       }
     });
 
-    if (!res.ok) return cachedJSearchJobs;
+    if (!res.ok) return cachedJSearchJobs[query] || [];
     const data = await res.json();
     
     const rawJobs = (data.data && data.data.jobs) ? data.data.jobs : (Array.isArray(data.data) ? data.data : []);
 
     if (rawJobs.length > 0) {
-      cachedJSearchJobs = rawJobs.map(item => ({
+      cachedJSearchJobs[query] = rawJobs.map(item => ({
         id: `jsearch_${item.job_id}`,
         source: 'JSearch (LinkedIn/Indeed/Glassdoor)',
         title: item.job_title || 'Android Developer',
@@ -46,13 +49,13 @@ async function fetchJSearchJobs(query = 'Android Developer', apiKey = '') {
         postedAt: item.job_posted_at_datetime_utc || new Date().toISOString(),
         salary: item.job_min_salary ? `$${item.job_min_salary} - $${item.job_max_salary}` : 'Competitive'
       }));
-      lastJSearchFetchTime = now;
+      lastJSearchFetchTime[query] = now;
     }
 
-    return cachedJSearchJobs;
+    return cachedJSearchJobs[query] || [];
   } catch (err) {
     console.error('JSearch Fetch Error:', err.message);
-    return cachedJSearchJobs;
+    return cachedJSearchJobs[query] || [];
   }
 }
 
@@ -190,8 +193,8 @@ async function fetchAllLiveJobs(userSkills = [], apiKey = '') {
   const activeJSearchKey = apiKey || process.env.JSEARCH_API_KEY || '';
 
   const now = Date.now();
-  if (cachedJSearchJobs.length > 0 && (now - lastJSearchFetchTime) < CACHE_TTL_MS) {
-    return cachedJSearchJobs;
+  if (cachedCombinedJobs.length > 0 && (now - lastCombinedFetchTime) < CACHE_TTL_MS) {
+    return cachedCombinedJobs;
   }
 
   console.log('Fetching multi-query JSearch & live sources...');
@@ -219,8 +222,8 @@ async function fetchAllLiveJobs(userSkills = [], apiKey = '') {
 
   const result = Array.from(uniqueMap.values());
   if (result.length > 0) {
-    cachedJSearchJobs = result;
-    lastJSearchFetchTime = now;
+    cachedCombinedJobs = result;
+    lastCombinedFetchTime = now;
   }
 
   return result;
