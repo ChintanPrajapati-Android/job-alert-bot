@@ -7,18 +7,13 @@ on:
   workflow_dispatch:
     # Allows manual 1-click trigger from GitHub Actions tab
 
-permissions:
-  contents: write
-
 jobs:
   run-job-alert:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout Code (Full History)
+      - name: Checkout Code
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
       - name: Setup Node.js 24
         uses: actions/setup-node@v4
@@ -31,13 +26,3 @@ jobs:
           JSEARCH_API_KEY: ${{ secrets.JSEARCH_API_KEY }}
         run: |
           node scripts/cronTrigger.js
-
-      - name: Save History State
-        continue-on-error: true
-        run: |
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git add data/history.json
-          git diff-index --quiet HEAD || git commit -m "Auto-update sent job history [skip ci]"
-          git pull --rebase origin main || true
-          git push origin main || true
