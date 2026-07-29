@@ -7,6 +7,9 @@ on:
   workflow_dispatch:
     # Allows manual 1-click trigger from GitHub Actions tab
 
+permissions:
+  contents: write
+
 jobs:
   run-job-alert:
     runs-on: ubuntu-latest
@@ -14,11 +17,13 @@ jobs:
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Setup Node.js
+      - name: Setup Node.js 24
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '24'
 
       - name: Run Job Alert Automation Cron
         env:
@@ -27,10 +32,8 @@ jobs:
         run: |
           node scripts/cronTrigger.js
 
-      - name: Commit updated sent job history
-        run: |
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git add data/history.json
-          git diff-index --quiet HEAD || git commit -m "Auto-update sent job history [skip ci]"
-          git push
+      - name: Auto Commit Sent History
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "Auto-update sent job history [skip ci]"
+          file_pattern: "data/history.json"
