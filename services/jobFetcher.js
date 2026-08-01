@@ -201,6 +201,76 @@ async function fetchWeWorkRemotelyJobs() {
     return [];
   }
 }
+async function fetchHackerNewsJobs() {
+  try {
+    // 1. Fetch the latest "Who is hiring" story ID
+    const storyRes = await fetch('https://hn.algolia.com/api/v1/search?tags=story,author_whoishiring&hitsPerPage=1');
+    if (!storyRes.ok) return [];
+    const storyData = await storyRes.json();
+    if (!storyData.hits || storyData.hits.length === 0) return [];
+    
+    const storyId = storyData.hits[0].objectID;
+    const storyTitle = storyData.hits[0].title || 'HN Who is hiring';
+
+    // 2. Fetch comments containing "android" or "kotlin" under this story ID
+    const [androidRes, kotlinRes] = await Promise.all([
+      fetch(`https://hn.algolia.com/api/v1/search?tags=comment,story_${storyId}&query=android&hitsPerPage=30`),
+      fetch(`https://hn.algolia.com/api/v1/search?tags=comment,story_${storyId}&query=kotlin&hitsPerPage=30`)
+    ]);
+
+    const androidHits = androidRes.ok ? (await androidRes.json()).hits || [] : [];
+    const kotlinHits = kotlinRes.ok ? (await kotlinRes.json()).hits || [] : [];
+
+    const combinedHits = [...androidHits, ...kotlinHits];
+
+    // Deduplicate by comment objectID
+    const uniqueHitsMap = new Map();
+    combinedHits.forEach(hit => {
+      uniqueHitsMap.set(hit.objectID, hit);
+    });
+
+    const parsedJobs = [];
+    uniqueHitsMap.forEach(item => {
+      let cleanText = item.comment_text || '';
+      // Strip HTML tags to get a clean snippet
+      let snippet = cleanText
+        .replace(/<p>/g, '\n')
+        .replace(/<br>/g, '\n')
+        .replace(/<\/?[^>]+(>|$)/g, '')
+        .trim();
+
+      // Extract details from first line (typically Company | Title | Location)
+      const lines = snippet.split('\n');
+      const firstLine = lines[0] || 'Hacker News Job Post';
+      const parts = firstLine.split('|').map(p => p.trim());
+      
+      const company = parts[0] || 'HN Startup';
+      const title = parts[1] || 'Android Engineer';
+      const location = parts[2] || 'Remote / ONSITE';
+      const workMode = parts[3] || 'Flexible';
+
+      parsedJobs.push({
+        id: `hn_${item.objectID}`,
+        source: `Hacker News (Who is Hiring - ${storyTitle})`,
+        title: title,
+        company: company,
+        location: `${location} (${workMode})`.trim(),
+        jobType: 'Contract / Full-time',
+        tags: ['hn', 'startup', 'android', 'kotlin'],
+        description: snippet,
+        applyUrl: `https://news.ycombinator.com/item?id=${item.objectID}`,
+        postedAt: item.created_at || new Date().toISOString(),
+        salary: 'Competitive'
+      });
+    });
+
+    return parsedJobs;
+  } catch (err) {
+    console.error('Hacker News Fetch Error:', err.message);
+    return [];
+  }
+}
+
 
 async function fetchAllLiveJobs(userSkills = [], apiKey = '') {
   const activeJSearchKey = apiKey || process.env.JSEARCH_API_KEY || '';
@@ -212,17 +282,18 @@ async function fetchAllLiveJobs(userSkills = [], apiKey = '') {
 
   console.log('Fetching multi-query JSearch & live sources...');
   
-  const [jsearch1, jsearch2, jsearch3, remoteOk, remotiveAndroid, himalayasAndroid, wwrJobs] = await Promise.all([
+  const [jsearch1, jsearch2, jsearch3, remoteOk, remotiveAndroid, himalayasAndroid, wwrJobs, hnJobs] = await Promise.all([
     fetchJSearchJobs('Android Developer', activeJSearchKey),
     fetchJSearchJobs('Kotlin Android Developer', activeJSearchKey),
     fetchJSearchJobs('Android Developer Contract Freelance', activeJSearchKey),
     fetchRemoteOKJobs(),
     fetchRemotiveJobs('android'),
     fetchHimalayasJobs('android'),
-    fetchWeWorkRemotelyJobs()
+    fetchWeWorkRemotelyJobs(),
+    fetchHackerNewsJobs()
   ]);
 
-  const combined = [...jsearch1, ...jsearch2, ...jsearch3, ...remoteOk, ...remotiveAndroid, ...himalayasAndroid, ...wwrJobs];
+  const combined = [...jsearch1, ...jsearch2, ...jsearch3, ...remoteOk, ...remotiveAndroid, ...himalayasAndroid, ...wwrJobs, ...hnJobs];
   
   // Deduplicate by Company + Title
   const uniqueMap = new Map();
@@ -248,5 +319,6 @@ module.exports = {
   fetchRemoteOKJobs,
   fetchRemotiveJobs,
   fetchHimalayasJobs,
-  fetchWeWorkRemotelyJobs
+  fetchWeWorkRemotelyJobs,
+  fetchHackerNewsJobs
 };
