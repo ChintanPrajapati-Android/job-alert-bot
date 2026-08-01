@@ -272,20 +272,15 @@ async function fetchHackerNewsJobs() {
 }
 
 
-async function fetchAllLiveJobs(userSkills = [], apiKey = '') {
-  const activeJSearchKey = apiKey || process.env.JSEARCH_API_KEY || '';
-
+async function fetchAllLiveJobs(userSkills = []) {
   const now = Date.now();
   if (cachedCombinedJobs.length > 0 && (now - lastCombinedFetchTime) < CACHE_TTL_MS) {
     return cachedCombinedJobs;
   }
 
-  console.log('Fetching multi-query JSearch & live sources...');
+  console.log('Fetching live sources...');
   
-  const [jsearch1, jsearch2, jsearch3, remoteOk, remotiveAndroid, himalayasAndroid, wwrJobs, hnJobs] = await Promise.all([
-    fetchJSearchJobs('Android Developer', activeJSearchKey),
-    fetchJSearchJobs('Kotlin Android Developer', activeJSearchKey),
-    fetchJSearchJobs('Android Developer Contract Freelance', activeJSearchKey),
+  const [remoteOk, remotiveAndroid, himalayasAndroid, wwrJobs, hnJobs] = await Promise.all([
     fetchRemoteOKJobs(),
     fetchRemotiveJobs('android'),
     fetchHimalayasJobs('android'),
@@ -293,7 +288,7 @@ async function fetchAllLiveJobs(userSkills = [], apiKey = '') {
     fetchHackerNewsJobs()
   ]);
 
-  const combined = [...jsearch1, ...jsearch2, ...jsearch3, ...remoteOk, ...remotiveAndroid, ...himalayasAndroid, ...wwrJobs, ...hnJobs];
+  const combined = [...remoteOk, ...remotiveAndroid, ...himalayasAndroid, ...wwrJobs, ...hnJobs];
   
   // Deduplicate by Company + Title
   const uniqueMap = new Map();
