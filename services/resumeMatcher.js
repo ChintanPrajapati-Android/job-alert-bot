@@ -27,10 +27,33 @@ function matchJobAgainstResume(job, userProfile) {
   const jobTagsNorm = (job.tags || []).map(t => normalizeText(String(t))).join(' ');
   const fullText = `${jobTitleNorm} ${jobTagsNorm} ${jobDescNorm} ${jobLocNorm}`;
 
-  // 1. STRICT ROLE FILTER: TITLE MUST BE ANDROID / KOTLIN ONLY!
-  const isAndroidTitle = jobTitleNorm.includes('android') || jobTitleNorm.includes('kotlin');
+  // 1. STRICT NATIVE ANDROID ROLE FILTER: Title has Android/Kotlin OR (Mobile title + Android/Kotlin in description). Must NOT contain non-Android keywords in the title.
+  const hasAndroidOrKotlinInTitle = jobTitleNorm.includes('android') || jobTitleNorm.includes('kotlin');
+  const hasMobileInTitle = jobTitleNorm.includes('mobile');
   
-  if (!isAndroidTitle) {
+  const hasNonAndroidKeywordsInTitle = 
+    jobTitleNorm.includes('devops') || 
+    jobTitleNorm.includes('qa') || 
+    jobTitleNorm.includes('tester') || 
+    jobTitleNorm.includes('backend') || 
+    jobTitleNorm.includes('frontend') || 
+    jobTitleNorm.includes('web') || 
+    jobTitleNorm.includes('design') || 
+    jobTitleNorm.includes('data') || 
+    jobTitleNorm.includes('cloud') || 
+    jobTitleNorm.includes('salesforce') || 
+    jobTitleNorm.includes('sap') || 
+    jobTitleNorm.includes('ios') || 
+    jobTitleNorm.includes('swift') || 
+    jobTitleNorm.includes('flutter') || 
+    jobTitleNorm.includes('react native') ||
+    jobTitleNorm.includes('ai ') ||
+    jobTitleNorm.startsWith('ai ') ||
+    jobTitleNorm.includes(' artificial intelligence');
+
+  const isAndroidRole = (hasAndroidOrKotlinInTitle || (hasMobileInTitle && (jobDescNorm.includes('android') || jobDescNorm.includes('kotlin')))) && !hasNonAndroidKeywordsInTitle;
+  
+  if (!isAndroidRole) {
     job.matchScore = 0; // REJECT NON-ANDROID ROLES
     return job;
   }

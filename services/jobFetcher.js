@@ -117,7 +117,7 @@ async function fetchRemotiveJobs(query = 'android') {
 
 async function fetchHimalayasJobs(query = 'android') {
   try {
-    const res = await fetch(`https://himalayas.app/jobs/api?q=${encodeURIComponent(query)}&limit=100`, {
+    const res = await fetch(`https://himalayas.app/jobs/api/search?q=${encodeURIComponent(query)}&limit=100`, {
       headers: { 'User-Agent': 'Mozilla/5.0' }
     });
     if (!res.ok) return [];
@@ -145,41 +145,54 @@ async function fetchHimalayasJobs(query = 'android') {
 
 async function fetchWeWorkRemotelyJobs() {
   try {
-    const res = await fetch('https://weworkremotely.com/categories/remote-full-stack-programming-jobs.rss', {
-      headers: { 'User-Agent': 'Mozilla/5.0' }
-    });
-    if (!res.ok) return [];
-    const xml = await res.text();
+    const [mobileRes, contractRes] = await Promise.all([
+      fetch('https://weworkremotely.com/categories/remote-mobile-app-dev-jobs.rss', { headers: { 'User-Agent': 'Mozilla/5.0' } }),
+      fetch('https://weworkremotely.com/categories/remote-contract-jobs.rss', { headers: { 'User-Agent': 'Mozilla/5.0' } })
+    ]);
 
-    const items = xml.split('<item>').slice(1);
+    const xmls = await Promise.all([
+      mobileRes.ok ? mobileRes.text() : '',
+      contractRes.ok ? contractRes.text() : ''
+    ]);
+
     const jobs = [];
 
-    items.forEach((itemXml, index) => {
-      const titleMatch = itemXml.match(/<title><!\[CDATA\[(.*?)\]\]><\/title>/) || itemXml.match(/<title>(.*?)<\/title>/);
-      const linkMatch = itemXml.match(/<link>(.*?)<\/link>/);
-      const descMatch = itemXml.match(/<description><!\[CDATA\[(.*?)\]\]><\/description>/) || itemXml.match(/<description>(.*?)<\/description>/);
-      const pubDateMatch = itemXml.match(/<pubDate>(.*?)<\/pubDate>/);
+    xmls.forEach(xml => {
+      if (!xml) return;
+      const items = xml.split('<item>').slice(1);
+      
+      items.forEach(itemXml => {
+        const titleMatch = itemXml.match(/<title><!\[CDATA\[(.*?)\]\]><\/title>/) || itemXml.match(/<title>(.*?)<\/title>/);
+        const linkMatch = itemXml.match(/<link>(.*?)<\/link>/);
+        const descMatch = itemXml.match(/<description><!\[CDATA\[(.*?)\]\]><\/description>/) || itemXml.match(/<description>(.*?)<\/description>/);
+        const pubDateMatch = itemXml.match(/<pubDate>(.*?)<\/pubDate>/);
 
-      if (titleMatch && linkMatch) {
-        const fullTitle = titleMatch[1];
-        const parts = fullTitle.split(':');
-        const company = parts.length > 1 ? parts[0].trim() : 'WeWorkRemotely Employer';
-        const title = parts.length > 1 ? parts.slice(1).join(':').trim() : fullTitle;
+        if (titleMatch && linkMatch) {
+          const fullTitle = titleMatch[1];
+          const parts = fullTitle.split(':');
+          const company = parts.length > 1 ? parts[0].trim() : 'WeWorkRemotely Employer';
+          const title = parts.length > 1 ? parts.slice(1).join(':').trim() : fullTitle;
+          
+          const link = linkMatch[1];
+          // Extract slug to form a stable unique ID
+          const slug = link.split('/').pop().split('?')[0].replace(/[^a-zA-Z0-9-]/g, '_');
+          const uniqueId = `wwr_${slug}`;
 
-        jobs.push({
-          id: `wwr_${index}`,
-          source: 'WeWorkRemotely',
-          title: title,
-          company: company,
-          location: 'Remote (Global)',
-          jobType: 'Full-time / Remote',
-          tags: ['programming', 'mobile', 'android'],
-          description: descMatch ? descMatch[1] : title,
-          applyUrl: linkMatch[1],
-          postedAt: pubDateMatch ? new Date(pubDateMatch[1]).toISOString() : new Date().toISOString(),
-          salary: 'Competitive'
-        });
-      }
+          jobs.push({
+            id: uniqueId,
+            source: 'WeWorkRemotely',
+            title: title,
+            company: company,
+            location: 'Remote (Global)',
+            jobType: 'Remote',
+            tags: ['programming', 'mobile', 'android'],
+            description: descMatch ? descMatch[1] : title,
+            applyUrl: link,
+            postedAt: pubDateMatch ? new Date(pubDateMatch[1]).toISOString() : new Date().toISOString(),
+            salary: 'Competitive'
+          });
+        }
+      });
     });
 
     return jobs;
@@ -202,7 +215,7 @@ async function fetchAllLiveJobs(userSkills = [], apiKey = '') {
   const [jsearch1, jsearch2, jsearch3, remoteOk, remotiveAndroid, himalayasAndroid, wwrJobs] = await Promise.all([
     fetchJSearchJobs('Android Developer', activeJSearchKey),
     fetchJSearchJobs('Kotlin Android Developer', activeJSearchKey),
-    fetchJSearchJobs('Android Engineer India', activeJSearchKey),
+    fetchJSearchJobs('Android Developer Contract Freelance', activeJSearchKey),
     fetchRemoteOKJobs(),
     fetchRemotiveJobs('android'),
     fetchHimalayasJobs('android'),
